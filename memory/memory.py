@@ -24,19 +24,55 @@ class Memory:
         self.connection.commit()
 
     def remember(self, key, value):
+        """
+        Store or update a memory.
+
+        Returns:
+            "created"   -> new memory
+            "updated"   -> existing memory changed
+            "unchanged" -> same value already exists
+        """
+
+        existing = self.connection.execute(
+            """
+            SELECT value
+            FROM memories
+            WHERE key = ?
+            """,
+            (key,),
+        ).fetchone()
+
+        if existing is None:
+            self.connection.execute(
+                """
+                INSERT INTO memories (key, value)
+                VALUES (?, ?)
+                """,
+                (key, value),
+            )
+
+            self.connection.commit()
+
+            return "created"
+
+        old_value = existing[0]
+
+        if old_value == value:
+            return "unchanged"
+
         self.connection.execute(
             """
-            INSERT INTO memories (key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key)
-            DO UPDATE SET
-                value = excluded.value,
+            UPDATE memories
+            SET value = ?,
                 updated_at = CURRENT_TIMESTAMP
+            WHERE key = ?
             """,
-            (key, value),
+            (value, key),
         )
 
         self.connection.commit()
+
+        return "updated"
 
     def recall(self, key):
         cursor = self.connection.execute(

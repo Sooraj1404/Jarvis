@@ -3,10 +3,37 @@ from memory.memory import Memory
 from memory.intent import MemoryIntentDetector
 
 
+# Memories that should not be silently overwritten.
+PROTECTED_MEMORY_KEYS = {
+    "name",
+    "age",
+    "birthday",
+    "location",
+    "origin",
+    "phone",
+    "laptop",
+    "computer",
+}
+
+
+def format_memory_name(key):
+    """
+    Convert an internal memory key into natural language.
+
+    Example:
+        favorite_programming_language
+        -> favorite programming language
+    """
+    return key.replace("_", " ")
+
+
 def main():
     brain = Brain()
     memory = Memory()
     intent_detector = MemoryIntentDetector()
+
+    # Pending protected-memory update waiting for confirmation.
+    pending_memory_update = None
 
     print("=" * 45)
     print("        JARVIS V0.2 - NATURAL MEMORY")
@@ -31,9 +58,9 @@ def main():
             if not user_input:
                 continue
 
-            # ---------------------------
+            # =================================================
             # EXIT
-            # ---------------------------
+            # =================================================
 
             if user_input.lower() in {
                 "/exit",
@@ -47,9 +74,62 @@ def main():
                 )
                 break
 
-            # ---------------------------
+            # =================================================
+            # PENDING MEMORY CONFIRMATION
+            # =================================================
+
+            if pending_memory_update is not None:
+                answer = user_input.lower().strip()
+
+                if answer in {
+                    "yes",
+                    "y",
+                    "yes please",
+                    "do it",
+                    "update it",
+                    "update",
+                }:
+                    key = pending_memory_update["key"]
+                    value = pending_memory_update["value"]
+
+                    memory.remember(key, value)
+
+                    memory_name = format_memory_name(key)
+
+                    print(
+                        f"\nJarvis: Certainly, Sergeant. "
+                        f"I've updated your {memory_name} "
+                        f"to '{value}'.\n"
+                    )
+
+                    pending_memory_update = None
+                    continue
+
+                if answer in {
+                    "no",
+                    "n",
+                    "no thanks",
+                    "don't",
+                    "do not",
+                    "leave it",
+                }:
+                    print(
+                        "\nJarvis: Very well, Sergeant. "
+                        "I'll leave that memory unchanged.\n"
+                    )
+
+                    pending_memory_update = None
+                    continue
+
+                print(
+                    "\nJarvis: A simple yes or no will suffice, "
+                    "Sergeant.\n"
+                )
+                continue
+
+            # =================================================
             # REMEMBER COMMAND
-            # ---------------------------
+            # =================================================
 
             if user_input.startswith("/remember "):
                 parts = user_input.split(maxsplit=2)
@@ -64,18 +144,31 @@ def main():
                 key = parts[1]
                 value = parts[2]
 
-                memory.remember(key, value)
+                result = memory.remember(key, value)
 
-                print(
-                    f"\nJarvis: Remembered '{key}' "
-                    f"as '{value}'.\n"
-                )
+                if result == "created":
+                    print(
+                        f"\nJarvis: Remembered '{key}' "
+                        f"as '{value}'.\n"
+                    )
+
+                elif result == "updated":
+                    print(
+                        f"\nJarvis: Updated '{key}' "
+                        f"to '{value}'.\n"
+                    )
+
+                else:
+                    print(
+                        f"\nJarvis: I already have "
+                        f"'{key}' noted as '{value}'.\n"
+                    )
 
                 continue
 
-            # ---------------------------
+            # =================================================
             # RECALL COMMAND
-            # ---------------------------
+            # =================================================
 
             if user_input.startswith("/recall "):
                 parts = user_input.split(maxsplit=1)
@@ -102,9 +195,9 @@ def main():
 
                 continue
 
-            # ---------------------------
+            # =================================================
             # LIST MEMORIES
-            # ---------------------------
+            # =================================================
 
             if user_input == "/memories":
                 memories = memory.get_all()
@@ -125,9 +218,9 @@ def main():
 
                 continue
 
-            # ---------------------------
+            # =================================================
             # FORGET COMMAND
-            # ---------------------------
+            # =================================================
 
             if user_input.startswith("/forget "):
                 parts = user_input.split(maxsplit=1)
@@ -144,20 +237,20 @@ def main():
                     brain.reset_context()
 
                     print(
-                        f"\nJarvis: Forgotten "
-                        f"'{key}'.\n"
+                        f"\nJarvis: I've forgotten "
+                        f"'{key}', Sergeant.\n"
                     )
                 else:
                     print(
                         f"\nJarvis: I don't have a memory "
-                        f"for '{key}'.\n"
+                        f"for '{key}', Sergeant.\n"
                     )
 
                 continue
 
-            # ---------------------------
+            # =================================================
             # NATURAL MEMORY DETECTION
-            # ---------------------------
+            # =================================================
 
             intent = intent_detector.detect(user_input)
 
@@ -166,22 +259,86 @@ def main():
                 value = intent.get("value")
 
                 if key and value:
+
+                    existing_value = memory.recall(key)
+
+                    # -----------------------------------------
+                    # NEW MEMORY
+                    # -----------------------------------------
+
+                    if existing_value is None:
+                        memory.remember(key, value)
+
+                        print(
+                            "\nJarvis: Understood, Sergeant. "
+                            "I'll remember that.\n"
+                        )
+
+                        continue
+
+                    # -----------------------------------------
+                    # SAME MEMORY
+                    # -----------------------------------------
+
+                    if existing_value == value:
+                        print(
+                            "\nJarvis: I already have that "
+                            "noted, Sergeant.\n"
+                        )
+
+                        continue
+
+                    # -----------------------------------------
+                    # PROTECTED MEMORY CONFLICT
+                    # -----------------------------------------
+
+                    if key in PROTECTED_MEMORY_KEYS:
+                        pending_memory_update = {
+                            "key": key,
+                            "value": value,
+                        }
+
+                        memory_name = format_memory_name(key)
+
+                        print(
+                            f"\nJarvis: Sergeant, I currently "
+                            f"have your {memory_name} recorded "
+                            f"as '{existing_value}'."
+                        )
+
+                        print(
+                            f"Would you like me to change it "
+                            f"to '{value}'? (yes/no)\n"
+                        )
+
+                        continue
+
+                    # -----------------------------------------
+                    # SAFE MEMORY UPDATE
+                    # -----------------------------------------
+
                     memory.remember(key, value)
 
                     print(
-                        "\nJarvis: Understood, Sergeant. "
-                        "I'll remember that.\n"
+                        "\nJarvis: Of course, Sergeant. "
+                        "I've updated that memory.\n"
                     )
 
                     continue
 
+            # =================================================
+            # NATURAL FORGET
+            # =================================================
 
             if intent.get("intent") == "forget":
                 key = intent.get("key")
 
                 if key and memory.forget(key):
+                    brain.reset_context()
+
                     print(
-                        "\nJarvis: Consider it forgotten, Sergeant.\n"
+                        "\nJarvis: Consider it forgotten, "
+                        "Sergeant.\n"
                     )
                 else:
                     print(
@@ -191,15 +348,14 @@ def main():
 
                 continue
 
-
-            # ---------------------------
+            # =================================================
             # NORMAL AI CONVERSATION
-            # ---------------------------
+            # =================================================
 
             memories = memory.get_all()
 
             reply = brain.chat(
-            user_input,
+                user_input,
                 memories=memories,
             )
 
