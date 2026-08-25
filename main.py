@@ -1,13 +1,15 @@
 from brain.llm import Brain
 from memory.memory import Memory
+from memory.intent import MemoryIntentDetector
 
 
 def main():
     brain = Brain()
     memory = Memory()
+    intent_detector = MemoryIntentDetector()
 
     print("=" * 45)
-    print("        JARVIS V0.1.1 - LOCAL BRAIN")
+    print("        JARVIS V0.2 - NATURAL MEMORY")
     print("=" * 45)
     print()
     print("Jarvis: Online, Sergeant.")
@@ -33,12 +35,20 @@ def main():
             # EXIT
             # ---------------------------
 
-            if user_input.lower() in {"/exit", "exit", "quit", "shutdown"}:
-                print("\nJarvis: Shutting down. Goodbye, Sergeant.")
+            if user_input.lower() in {
+                "/exit",
+                "exit",
+                "quit",
+                "shutdown",
+            }:
+                print(
+                    "\nJarvis: Shutting down. "
+                    "Goodbye, Sergeant."
+                )
                 break
 
             # ---------------------------
-            # REMEMBER
+            # REMEMBER COMMAND
             # ---------------------------
 
             if user_input.startswith("/remember "):
@@ -64,14 +74,16 @@ def main():
                 continue
 
             # ---------------------------
-            # RECALL
+            # RECALL COMMAND
             # ---------------------------
 
             if user_input.startswith("/recall "):
                 parts = user_input.split(maxsplit=1)
 
                 if len(parts) < 2:
-                    print("\nJarvis: Usage: /recall <key>\n")
+                    print(
+                        "\nJarvis: Usage: /recall <key>\n"
+                    )
                     continue
 
                 key = parts[1]
@@ -79,7 +91,9 @@ def main():
                 value = memory.recall(key)
 
                 if value:
-                    print(f"\nJarvis: {key} = {value}\n")
+                    print(
+                        f"\nJarvis: {key} = {value}\n"
+                    )
                 else:
                     print(
                         f"\nJarvis: I don't have a memory "
@@ -96,7 +110,10 @@ def main():
                 memories = memory.get_all()
 
                 if not memories:
-                    print("\nJarvis: I don't remember anything yet.\n")
+                    print(
+                        "\nJarvis: I don't remember "
+                        "anything yet.\n"
+                    )
                     continue
 
                 print("\nJarvis: Stored memories:")
@@ -109,21 +126,26 @@ def main():
                 continue
 
             # ---------------------------
-            # FORGET
+            # FORGET COMMAND
             # ---------------------------
 
             if user_input.startswith("/forget "):
                 parts = user_input.split(maxsplit=1)
 
                 if len(parts) < 2:
-                    print("\nJarvis: Usage: /forget <key>\n")
+                    print(
+                        "\nJarvis: Usage: /forget <key>\n"
+                    )
                     continue
 
                 key = parts[1]
 
                 if memory.forget(key):
+                    brain.reset_context()
+
                     print(
-                        f"\nJarvis: Forgotten '{key}'.\n"
+                        f"\nJarvis: Forgotten "
+                        f"'{key}'.\n"
                     )
                 else:
                     print(
@@ -134,23 +156,67 @@ def main():
                 continue
 
             # ---------------------------
+            # NATURAL MEMORY DETECTION
+            # ---------------------------
+
+            intent = intent_detector.detect(user_input)
+
+            if intent.get("intent") == "remember":
+                key = intent.get("key")
+                value = intent.get("value")
+
+                if key and value:
+                    memory.remember(key, value)
+
+                    print(
+                        "\nJarvis: Understood, Sergeant. "
+                        "I'll remember that.\n"
+                    )
+
+                    continue
+
+
+            if intent.get("intent") == "forget":
+                key = intent.get("key")
+
+                if key and memory.forget(key):
+                    print(
+                        "\nJarvis: Consider it forgotten, Sergeant.\n"
+                    )
+                else:
+                    print(
+                        "\nJarvis: I don't appear to have that "
+                        "in my memory, Sergeant.\n"
+                    )
+
+                continue
+
+
+            # ---------------------------
             # NORMAL AI CONVERSATION
             # ---------------------------
 
             memories = memory.get_all()
 
             reply = brain.chat(
-                user_input,
+            user_input,
                 memories=memories,
             )
+
             print(f"\nJarvis: {reply}\n")
 
         except KeyboardInterrupt:
-            print("\n\nJarvis: Shutting down. Goodbye, Sergeant.")
+            print(
+                "\n\nJarvis: Shutting down. "
+                "Goodbye, Sergeant."
+            )
             break
 
         except Exception as error:
-            print(f"\nJarvis: Error: {error}\n")
+            print(
+                f"\nJarvis: I encountered an error: "
+                f"{error}\n"
+            )
 
     memory.close()
 

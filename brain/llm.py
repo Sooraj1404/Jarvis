@@ -11,50 +11,61 @@ class Brain:
                 "content": SYSTEM_PROMPT,
             }
         ]
-
+    def reset_context(self):
+        self.messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT,
+            }
+        ]
     def chat(self, user_input, memories=None):
+        messages = list(self.messages)
+
         memory_context = self._build_memory_context(memories)
 
-        prompt = user_input
-
         if memory_context:
-            prompt = f"""
-Relevant information remembered about the user:
+            messages.append(
+                {
+                    "role": "system",
+                    "content": (
+                        "CURRENT USER MEMORY:\n"
+                        f"{memory_context}\n\n"
+                        "Use these memories when relevant. "
+                        "Do not invent additional memories."
+                    ),
+                }
+            )
 
-{memory_context}
+        messages.append(
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        )
 
-User's current message:
-{user_input}
-"""
+        response = ollama.chat(
+            model=MODEL,
+            messages=messages,
+            think=False,
+        )
+
+        reply = response["message"]["content"]
 
         self.messages.append(
             {
                 "role": "user",
-                "content": prompt,
+                "content": user_input,
             }
         )
 
-        try:
-            response = ollama.chat(
-                model=MODEL,
-                messages=self.messages,
-                think=False,
-            )
+        self.messages.append(
+            {
+                "role": "assistant",
+                "content": reply,
+            }
+        )
 
-            reply = response["message"]["content"]
-
-            self.messages.append(
-                {
-                    "role": "assistant",
-                    "content": reply,
-                }
-            )
-
-            return reply
-
-        except Exception:
-            self.messages.pop()
-            raise
+        return reply
 
     @staticmethod
     def _build_memory_context(memories):

@@ -53,7 +53,11 @@ class Memory:
 
     def get_all(self):
         cursor = self.connection.execute(
-            "SELECT key, value FROM memories ORDER BY key"
+            """
+            SELECT key, value
+            FROM memories
+            ORDER BY key
+            """
         )
 
         return cursor.fetchall()
