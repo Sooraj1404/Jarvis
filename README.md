@@ -2,7 +2,7 @@
 
 > A local-first, open-source personal AI assistant inspired by JARVIS from Iron Man.
 
-JARVIS is an experimental personal AI assistant being built from the ground up with a focus on **local execution, privacy, modularity, and zero paid APIs**.
+JARVIS is an experimental personal AI assistant being built from the ground up with a focus on **local execution, privacy, modularity, reliability, and zero paid APIs**.
 
 The goal is not to create another chatbot. The goal is to gradually build an assistant that can understand natural language, remember its user, perform computer tasks, and eventually provide a natural voice interface.
 
@@ -10,9 +10,9 @@ The goal is not to create another chatbot. The goal is to gradually build an ass
 
 ## Current Status
 
-**Version: V0.1.2 — Memory-Aware Local Brain**
+**Version: V0.2 — Natural Memory**
 
-JARVIS currently runs locally on a Windows laptop using a local LLM through Ollama.
+JARVIS currently runs locally on a Windows laptop using Ollama and a local Qwen3 1.7B model.
 
 ### Working
 
@@ -27,12 +27,19 @@ JARVIS currently runs locally on a Windows laptop using a local LLM through Olla
 - [x] Store memories
 - [x] Recall memories
 - [x] Delete memories
+- [x] Natural-language memory creation
+- [x] Natural-language memory deletion
+- [x] Memory persistence across restarts
+- [x] Deterministic local memory routing
+- [x] Prevention of obvious false memories
 - [x] Memory-aware responses
 - [x] No paid APIs
 
 ### Not Implemented Yet
 
-- [ ] Natural-language memory commands
+- [ ] Natural memory updates
+- [ ] Advanced memory extraction
+- [ ] Semantic memory search
 - [ ] Computer control
 - [ ] Tool calling
 - [ ] Web search
@@ -42,7 +49,6 @@ JARVIS currently runs locally on a Windows laptop using a local LLM through Olla
 - [ ] Wake word
 - [ ] Android companion
 - [ ] Vision
-- [ ] Advanced semantic memory
 - [ ] Smart-home integration
 
 ---
@@ -94,15 +100,15 @@ Paid APIs should not be required for the core assistant.
 
 Each major capability should be replaceable without rewriting the entire system.
 
-For example:
+The intended architecture is:
 
 ```text
 LLM
- ↓
+ |
 Memory
- ↓
+ |
 Tools
- ↓
+ |
 Voice
- ↓
+ |
 Android
