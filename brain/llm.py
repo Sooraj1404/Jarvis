@@ -1,4 +1,5 @@
 import ollama
+import json
 
 from config.settings import MODEL, SYSTEM_PROMPT
 from tools.intent import ToolIntentDetector
@@ -74,14 +75,16 @@ class Brain:
 
         return reply
 
+
+    def detect_tool_request(self, user_input):
+        """Detect a tool request without executing it."""
+
+        return self.intent_detector.detect(user_input)
+
     def handle_tool_request(self, user_input):
-        """Detect and execute a tool request.
+        """Detect and execute a tool request."""
 
-        Returns a ToolResult when the input is recognized as a
-        tool request, otherwise returns None.
-        """
-
-        command = self.intent_detector.detect(user_input)
+        command = self.detect_tool_request(user_input)
 
         if command is None:
             return None

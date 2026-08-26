@@ -4,12 +4,38 @@ from tools.command import ToolCommand
 class ToolIntentDetector:
     """Detect basic tool-related intents from natural language."""
 
+    POLITE_PREFIXES = (
+        "could you please ",
+        "could you ",
+        "can you please ",
+        "can you ",
+        "would you please ",
+        "would you ",
+        "please ",
+        "i want you to ",
+        "i need you to ",
+    )
+
+    POLITE_SUFFIXES = (
+    " for me",
+    " please",
+    )
+
+    ACTION_ALIASES = {
+        "launch ": "open ",
+        "start ": "open ",
+        "show me ": "show ",
+        "remove ": "delete file ",
+        "get rid of ": "delete file ",
+    }
+
     def detect(self, text: str) -> ToolCommand | None:
         text = text.strip()
 
         if not text:
             return None
 
+        text = self._normalize_request(text)
         lowered = text.lower()
 
         # -------------------------------------------------
@@ -47,6 +73,12 @@ class ToolIntentDetector:
             "show files",
             "list directory",
             "show directory",
+            "list the files here",
+            "show the files here",
+            "show what's in this folder",
+            "show whats in this folder",
+            "what files are in this directory",
+            "what files are in this folder",
         }:
             return ToolCommand(
                 tool="list_files",
@@ -272,11 +304,54 @@ class ToolIntentDetector:
 
         return None
 
+    @classmethod
+    def _normalize_request(cls, text: str) -> str:
+        """Normalize common conversational phrasing."""
+
+        normalized = text.strip()
+
+        lowered = normalized.lower()
+
+        for prefix in cls.POLITE_PREFIXES:
+            if lowered.startswith(prefix):
+                normalized = normalized[len(prefix):].strip()
+                break
+
+        lowered = normalized.lower()
+
+        for source, target in cls.ACTION_ALIASES.items():
+            if lowered.startswith(source):
+                normalized = (
+                    target
+                    + normalized[len(source):]
+                )
+                break
+
+        lowered = normalized.lower()
+
+        for suffix in cls.POLITE_SUFFIXES:
+            if lowered.endswith(suffix):
+                normalized = normalized[:-len(suffix)].strip()
+                break
+
+        return normalized
     @staticmethod
     def _clean_value(value: str) -> str:
-        """Remove common trailing punctuation from a command value."""
+        """Clean extracted command values."""
 
-        return value.strip().rstrip(".,!?")
+        value = value.strip().rstrip(".,!?")
+
+        lowered = value.lower()
+
+        for suffix in (
+            " for me",
+            " please",
+        ):
+            if lowered.endswith(suffix):
+                value = value[:-len(suffix)].strip()
+                break
+
+        return value
 
     @staticmethod
     def _split_once(

@@ -1,7 +1,10 @@
 from brain.llm import Brain
 from memory.memory import Memory
 from memory.intent import MemoryIntentDetector
-
+from tools.permissions import (
+    ToolPermission,
+    get_tool_permission,
+)
 
 # Memories that should not be silently overwritten.
 PROTECTED_MEMORY_KEYS = {
@@ -34,6 +37,7 @@ def main():
 
     # Pending protected-memory update waiting for confirmation.
     pending_memory_update = None
+    pending_tool_command = None
 
     print("=" * 45)
     print("        JARVIS V0.2 - NATURAL MEMORY")
@@ -125,6 +129,59 @@ def main():
                     "\nJarvis: A simple yes or no will suffice, "
                     "Sergeant.\n"
                 )
+                continue
+
+            # =================================================
+            # PENDING TOOL CONFIRMATION
+            # =================================================
+
+            if pending_tool_command is not None:
+                answer = user_input.lower().strip()
+
+                if answer in {
+                    "yes",
+                    "y",
+                    "yes please",
+                    "do it",
+                    "proceed",
+                    "confirm",
+                }:
+                    command = pending_tool_command
+
+                    result = brain.tool_executor.execute(
+                        command
+                    )
+
+                    pending_tool_command = None
+
+                    print(
+                        f"\nJarvis: {result.message}\n"
+                    )
+
+                    continue
+
+                if answer in {
+                    "no",
+                    "n",
+                    "no thanks",
+                    "cancel",
+                    "don't",
+                    "do not",
+                }:
+                    pending_tool_command = None
+
+                    print(
+                        "\nJarvis: Very well, Sergeant. "
+                        "The operation has been cancelled.\n"
+                    )
+
+                    continue
+
+                print(
+                    "\nJarvis: A simple yes or no will suffice, "
+                    "Sergeant.\n"
+                )
+
                 continue
 
             # =================================================
@@ -347,23 +404,46 @@ def main():
                     )
 
                 continue
+
             # =================================================
             # TOOL REQUEST
             # =================================================
 
-            tool_result = brain.handle_tool_request(user_input)
+            tool_command = brain.detect_tool_request(
+                user_input
+            )
 
-            if tool_result is not None:
-                if tool_result.success:
+            if tool_command is not None:
+                permission = get_tool_permission(
+                    tool_command.tool
+                )
+
+                if permission == ToolPermission.DESTRUCTIVE:
+                    pending_tool_command = tool_command
+
                     print(
-                        f"\nJarvis: {tool_result.message}\n"
+                        f"\nJarvis: Sergeant, "
+                        f"'{tool_command.tool}' is a "
+                        f"destructive operation."
                     )
-                else:
+
                     print(
-                        f"\nJarvis: {tool_result.message}\n"
+                        "Would you like me to proceed? "
+                        "(yes/no)\n"
                     )
+
+                    continue
+
+                tool_result = brain.tool_executor.execute(
+                    tool_command
+                )
+
+                print(
+                    f"\nJarvis: {tool_result.message}\n"
+                )
 
                 continue
+
             # =================================================
             # NORMAL AI CONVERSATION
             # =================================================
