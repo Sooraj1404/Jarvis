@@ -12,6 +12,7 @@ from tools import (
     ToolResult,
     WriteFileTool,
     RenameFileTool,
+    MoveFileTool,
 )
 
 
@@ -37,6 +38,7 @@ def main():
     registry.register(WriteFileTool())
     registry.register(DeleteFileTool())
     registry.register(RenameFileTool())
+    registry.register(MoveFileTool())
 
     # Verify registration
     tools = registry.list_tools()
@@ -51,6 +53,8 @@ def main():
     assert "write_file" in tools
     assert "delete_file" in tools
     assert "rename_file" in registry.list_tools()
+    assert "move_file" in registry.list_tools()
+
 
 
     # Verify test tool execution
@@ -329,7 +333,7 @@ def main():
     assert result.success is False
     assert "protected path" in result.message
 
-        # Verify destination path rejection
+    # Verify destination path rejection
     result = registry.execute(
         "rename_file",
         path="tools\\list_files.py",
@@ -348,6 +352,81 @@ def main():
 
     assert result.success is False
     assert "New file name must be a file name, not a path." in result.message
+
+    # Verify missing source path
+    result = registry.execute("move_file")
+
+    assert result.success is False
+    assert "No file path was specified" in result.message
+
+    # Verify missing destination
+    result = registry.execute(
+        "move_file",
+        path="tools\\list_files.py",
+    )
+
+    assert result.success is False
+    assert "No destination path was specified" in result.message
+
+    # Verify nonexistent source
+    result = registry.execute(
+        "move_file",
+        path="this_file_should_not_exist_jarvis_test.txt",
+        destination="moved.txt",
+    )
+
+    assert result.success is False
+    assert "File does not exist" in result.message
+
+    # Verify directory rejection
+    result = registry.execute(
+        "move_file",
+        path="tools",
+        destination="moved",
+    )
+
+    assert result.success is False
+    assert "not a file" in result.message
+
+    # Verify protected source
+    result = registry.execute(
+        "move_file",
+        path=".venv\\test.txt",
+        destination="moved.txt",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    # Verify destination outside approved root
+    result = registry.execute(
+        "move_file",
+        path="tools\\list_files.py",
+        destination="..\\moved.py",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
+
+    # Verify protected destination
+    result = registry.execute(
+        "move_file",
+        path="tools\\list_files.py",
+        destination=".git\\moved.py",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    # Verify nonexistent destination directory
+    result = registry.execute(
+        "move_file",
+        path="tools\\list_files.py",
+        destination="this_directory_should_not_exist_jarvis_test\\moved.py",
+    )
+
+    assert result.success is False
+    assert "Destination directory does not exist" in result.message
 
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
@@ -369,6 +448,7 @@ def main():
     assert "write_file" in manager_tools
     assert "delete_file" in manager_tools
     assert "rename_file" in manager_tools
+    assert "move_file" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")
