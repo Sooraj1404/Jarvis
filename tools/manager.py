@@ -10,6 +10,7 @@ from tools.write_file import WriteFileTool
 from tools.delete_file import DeleteFileTool
 from tools.rename_file import RenameFileTool
 from tools.move_file import MoveFileTool
+from tools.search_files import SearchFilesTool
 
 
 class ToolManager:
@@ -28,6 +29,7 @@ class ToolManager:
         self.registry.register(DeleteFileTool())
         self.registry.register(RenameFileTool())
         self.registry.register(MoveFileTool())
+        self.registry.register(SearchFilesTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)

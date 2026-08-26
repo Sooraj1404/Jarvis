@@ -13,6 +13,7 @@ from tools.system_info import SystemInfoTool
 from tools.delete_file import DeleteFileTool
 from tools.rename_file import RenameFileTool
 from tools.move_file import MoveFileTool
+from tools.search_files import SearchFilesTool
 
 __all__ = [
     "Tool",
@@ -30,4 +31,5 @@ __all__ = [
     "DeleteFileTool",
     "RenameFileTool",
     "MoveFileTool",
+    "SearchFilesTool",
 ]

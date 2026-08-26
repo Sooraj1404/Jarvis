@@ -13,6 +13,7 @@ from tools import (
     WriteFileTool,
     RenameFileTool,
     MoveFileTool,
+    SearchFilesTool,
 )
 
 
@@ -39,6 +40,7 @@ def main():
     registry.register(DeleteFileTool())
     registry.register(RenameFileTool())
     registry.register(MoveFileTool())
+    registry.register(SearchFilesTool())
 
     # Verify registration
     tools = registry.list_tools()
@@ -54,6 +56,7 @@ def main():
     assert "delete_file" in tools
     assert "rename_file" in registry.list_tools()
     assert "move_file" in registry.list_tools()
+    assert "search_files" in registry.list_tools()
 
 
 
@@ -428,6 +431,68 @@ def main():
     assert result.success is False
     assert "Destination directory does not exist" in result.message
 
+    # Verify missing search query
+    result = registry.execute("search_files")
+
+    assert result.success is False
+    assert "No search query was specified" in result.message
+
+    # Verify nonexistent search path
+    result = registry.execute(
+        "search_files",
+        query="python",
+        path="this_directory_should_not_exist_jarvis_test",
+    )
+
+    assert result.success is False
+    assert "does not exist" in result.message
+
+    # Verify file used as search path
+    result = registry.execute(
+        "search_files",
+        query="python",
+        path="tools\\list_files.py",
+    )
+
+    assert result.success is False
+    assert "not a directory" in result.message
+
+    # Verify protected search path
+    result = registry.execute(
+        "search_files",
+        query="python",
+        path=".venv",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    # Verify filesystem boundary
+    result = registry.execute(
+        "search_files",
+        query="python",
+        path="..",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
+
+    # Verify search in project
+    result = registry.execute(
+        "search_files",
+        query="list_files",
+        path=".",
+    )
+
+    assert result.success is True
+    assert isinstance(result.data, dict)
+    assert len(result.data["matches"]) >= 1
+
+    assert any(
+        match["name"] == "list_files.py"
+        for match in result.data["matches"]
+    )
+
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
 
@@ -449,6 +514,7 @@ def main():
     assert "delete_file" in manager_tools
     assert "rename_file" in manager_tools
     assert "move_file" in manager_tools
+    assert "search_files" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")
