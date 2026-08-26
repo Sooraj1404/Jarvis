@@ -347,7 +347,23 @@ def main():
                     )
 
                 continue
+            # =================================================
+            # TOOL REQUEST
+            # =================================================
 
+            tool_result = brain.handle_tool_request(user_input)
+
+            if tool_result is not None:
+                if tool_result.success:
+                    print(
+                        f"\nJarvis: {tool_result.message}\n"
+                    )
+                else:
+                    print(
+                        f"\nJarvis: {tool_result.message}\n"
+                    )
+
+                continue
             # =================================================
             # NORMAL AI CONVERSATION
             # =================================================

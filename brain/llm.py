@@ -1,6 +1,8 @@
 import ollama
 
 from config.settings import MODEL, SYSTEM_PROMPT
+from tools.intent import ToolIntentDetector
+from tools.executor import ToolExecutor
 
 
 class Brain:
@@ -11,6 +13,10 @@ class Brain:
                 "content": SYSTEM_PROMPT,
             }
         ]
+
+        self.intent_detector = ToolIntentDetector()
+        self.tool_executor = ToolExecutor()
+
     def reset_context(self):
         self.messages = [
             {
@@ -18,6 +24,7 @@ class Brain:
                 "content": SYSTEM_PROMPT,
             }
         ]
+
     def chat(self, user_input, memories=None):
         messages = list(self.messages)
 
@@ -66,6 +73,20 @@ class Brain:
         )
 
         return reply
+
+    def handle_tool_request(self, user_input):
+        """Detect and execute a tool request.
+
+        Returns a ToolResult when the input is recognized as a
+        tool request, otherwise returns None.
+        """
+
+        command = self.intent_detector.detect(user_input)
+
+        if command is None:
+            return None
+
+        return self.tool_executor.execute(command)
 
     @staticmethod
     def _build_memory_context(memories):
