@@ -7,6 +7,7 @@ from tools import (
     ToolRegistry,
     ToolResult,
     ListFilesTool,
+    ReadFileTool,
 )
 
 
@@ -27,6 +28,7 @@ def main():
     registry.register(OpenAppTool())
     registry.register(CloseAppTool())
     registry.register(ListFilesTool())
+    registry.register(ReadFileTool())
 
     # Verify registration
     tools = registry.list_tools()
@@ -36,6 +38,8 @@ def main():
     assert "open_app" in tools
     assert "close_app" in tools
     assert "list_files" in registry.list_tools()
+    assert "read_file" in registry.list_tools()
+
 
     # Verify test tool execution
     result = registry.execute("test_tool")
@@ -114,6 +118,39 @@ def main():
     assert result.success is False
     assert "not a directory" in result.message
 
+    # Verify missing path
+    result = registry.execute("read_file")
+
+    assert result.success is False
+    assert "No file path was specified" in result.message
+
+    # Verify nonexistent file
+    result = registry.execute(
+        "read_file",
+        path="C:\\this_file_should_not_exist_jarvis_test.txt",
+    )
+
+    assert result.success is False
+    assert "does not exist" in result.message
+
+    # Verify directory rejection
+    result = registry.execute(
+        "read_file",
+        path="tools",
+    )
+
+    assert result.success is False
+    assert "not a file" in result.message
+
+    # Verify protected path rejection
+    result = registry.execute(
+        "read_file",
+        path=".venv",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
 
@@ -129,6 +166,7 @@ def main():
     assert "open_app" in manager_tools
     assert "close_app" in manager_tools
     assert "list_files" in manager_tools
+    assert "read_file" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")
