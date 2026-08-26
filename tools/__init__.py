@@ -11,6 +11,7 @@ from tools.registry import ToolRegistry
 from tools.result import ToolResult
 from tools.system_info import SystemInfoTool
 from tools.delete_file import DeleteFileTool
+from tools.rename_file import RenameFileTool
 
 __all__ = [
     "Tool",
@@ -26,4 +27,5 @@ __all__ = [
     "CreateFileTool",
     "WriteFileTool",
     "DeleteFileTool",
+    "RenameFileTool",
 ]

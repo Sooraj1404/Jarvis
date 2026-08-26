@@ -8,6 +8,7 @@ from tools.read_file import ReadFileTool
 from tools.create_file import CreateFileTool
 from tools.write_file import WriteFileTool
 from tools.delete_file import DeleteFileTool
+from tools.rename_file import RenameFileTool
 
 
 class ToolManager:
@@ -24,6 +25,7 @@ class ToolManager:
         self.registry.register(CreateFileTool())
         self.registry.register(WriteFileTool())
         self.registry.register(DeleteFileTool())
+        self.registry.register(RenameFileTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)

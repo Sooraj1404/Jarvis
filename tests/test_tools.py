@@ -11,6 +11,7 @@ from tools import (
     ToolRegistry,
     ToolResult,
     WriteFileTool,
+    RenameFileTool,
 )
 
 
@@ -35,6 +36,7 @@ def main():
     registry.register(CreateFileTool())
     registry.register(WriteFileTool())
     registry.register(DeleteFileTool())
+    registry.register(RenameFileTool())
 
     # Verify registration
     tools = registry.list_tools()
@@ -48,6 +50,8 @@ def main():
     assert "create_file" in tools
     assert "write_file" in tools
     assert "delete_file" in tools
+    assert "rename_file" in registry.list_tools()
+
 
     # Verify test tool execution
     result = registry.execute("test_tool")
@@ -280,6 +284,71 @@ def main():
     assert result.success is False
     assert "outside the approved directory" in result.message
 
+    # Verify missing source path
+    result = registry.execute("rename_file")
+
+    assert result.success is False
+    assert "No file path was specified" in result.message
+
+    # Verify missing new name
+    result = registry.execute(
+        "rename_file",
+        path="tools\\list_files.py",
+    )
+
+    assert result.success is False
+    assert "No new file name was specified" in result.message
+
+    # Verify nonexistent source
+    result = registry.execute(
+        "rename_file",
+        path="this_file_should_not_exist_jarvis_test.txt",
+        new_name="renamed.txt",
+    )
+
+    assert result.success is False
+    assert "File does not exist" in result.message
+
+    # Verify directory rejection
+    result = registry.execute(
+        "rename_file",
+        path="tools",
+        new_name="renamed",
+    )
+
+    assert result.success is False
+    assert "not a file" in result.message
+
+    # Verify protected source
+    result = registry.execute(
+        "rename_file",
+        path=".venv\\test.txt",
+        new_name="renamed.txt",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+        # Verify destination path rejection
+    result = registry.execute(
+        "rename_file",
+        path="tools\\list_files.py",
+        new_name="..\\renamed.py",
+    )
+
+    assert result.success is False
+    assert "New file name must be a file name, not a path." in result.message
+
+    # Verify protected destination
+    result = registry.execute(
+        "rename_file",
+        path="tools\\list_files.py",
+        new_name=".git\\renamed.py",
+    )
+
+    assert result.success is False
+    assert "New file name must be a file name, not a path." in result.message
+
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
 
@@ -299,6 +368,7 @@ def main():
     assert "create_file" in manager_tools
     assert "write_file" in manager_tools
     assert "delete_file" in manager_tools
+    assert "rename_file" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")
