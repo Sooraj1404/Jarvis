@@ -1,3 +1,4 @@
+from tools.close_app import CloseAppTool
 from tools.open_app import OpenAppTool
 from tools.registry import ToolRegistry
 from tools.result import ToolResult
@@ -12,6 +13,7 @@ class ToolManager:
     def _register_tools(self) -> None:
         self.registry.register(SystemInfoTool())
         self.registry.register(OpenAppTool())
+        self.registry.register(CloseAppTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)
