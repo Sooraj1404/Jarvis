@@ -10,6 +10,7 @@ from tools.write_file import WriteFileTool
 from tools.registry import ToolRegistry
 from tools.result import ToolResult
 from tools.system_info import SystemInfoTool
+from tools.delete_file import DeleteFileTool
 
 __all__ = [
     "Tool",
@@ -24,4 +25,5 @@ __all__ = [
     "ReadFileTool",
     "CreateFileTool",
     "WriteFileTool",
+    "DeleteFileTool",
 ]
