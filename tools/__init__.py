@@ -14,6 +14,9 @@ from tools.delete_file import DeleteFileTool
 from tools.rename_file import RenameFileTool
 from tools.move_file import MoveFileTool
 from tools.search_files import SearchFilesTool
+from tools.create_directory import CreateDirectoryTool
+from tools.delete_directory import DeleteDirectoryTool
+from tools.get_file_info import GetFileInfoTool
 
 __all__ = [
     "Tool",
@@ -32,4 +35,7 @@ __all__ = [
     "RenameFileTool",
     "MoveFileTool",
     "SearchFilesTool",
+    "CreateDirectoryTool",
+    "DeleteDirectoryTool",
+    "GetFileInfoTool",
 ]

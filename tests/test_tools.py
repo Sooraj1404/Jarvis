@@ -14,6 +14,9 @@ from tools import (
     RenameFileTool,
     MoveFileTool,
     SearchFilesTool,
+    CreateDirectoryTool,
+    DeleteDirectoryTool,
+    GetFileInfoTool,
 )
 
 
@@ -41,7 +44,9 @@ def main():
     registry.register(RenameFileTool())
     registry.register(MoveFileTool())
     registry.register(SearchFilesTool())
-
+    registry.register(CreateDirectoryTool())
+    registry.register(DeleteDirectoryTool())
+    registry.register(GetFileInfoTool())
     # Verify registration
     tools = registry.list_tools()
 
@@ -57,6 +62,9 @@ def main():
     assert "rename_file" in registry.list_tools()
     assert "move_file" in registry.list_tools()
     assert "search_files" in registry.list_tools()
+    assert "create_directory" in registry.list_tools()
+    assert "delete_directory" in registry.list_tools()
+    assert "get_file_info" in registry.list_tools()
 
 
 
@@ -493,6 +501,88 @@ def main():
         for match in result.data["matches"]
     )
 
+        # Verify create_directory validation
+    result = registry.execute("create_directory")
+
+    assert result.success is False
+    assert "No directory path was specified" in result.message
+
+    result = registry.execute(
+        "create_directory",
+        path=".venv\\jarvis_test_directory",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    result = registry.execute(
+        "create_directory",
+        path="..\\jarvis_test_directory",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
+
+        # Verify delete_directory validation
+    result = registry.execute("delete_directory")
+
+    assert result.success is False
+    assert "No directory path was specified" in result.message
+
+    result = registry.execute(
+        "delete_directory",
+        path="this_directory_should_not_exist_jarvis_test",
+    )
+
+    assert result.success is False
+    assert "does not exist" in result.message
+
+    result = registry.execute(
+        "delete_directory",
+        path="tools\\list_files.py",
+    )
+
+    assert result.success is False
+    assert "not a directory" in result.message
+
+    result = registry.execute(
+        "delete_directory",
+        path=".git",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+        # Verify get_file_info validation
+    result = registry.execute("get_file_info")
+
+    assert result.success is False
+    assert "No path was specified" in result.message
+
+    result = registry.execute(
+        "get_file_info",
+        path="this_file_should_not_exist_jarvis_test.txt",
+    )
+
+    assert result.success is False
+    assert "does not exist" in result.message
+
+    result = registry.execute(
+        "get_file_info",
+        path=".venv",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    result = registry.execute(
+        "get_file_info",
+        path="..\\README.md",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
+
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
 
@@ -515,6 +605,9 @@ def main():
     assert "rename_file" in manager_tools
     assert "move_file" in manager_tools
     assert "search_files" in manager_tools
+    assert "create_directory" in manager_tools
+    assert "delete_directory" in manager_tools
+    assert "get_file_info" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")

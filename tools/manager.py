@@ -11,6 +11,9 @@ from tools.delete_file import DeleteFileTool
 from tools.rename_file import RenameFileTool
 from tools.move_file import MoveFileTool
 from tools.search_files import SearchFilesTool
+from tools.create_directory import CreateDirectoryTool
+from tools.delete_directory import DeleteDirectoryTool
+from tools.get_file_info import GetFileInfoTool
 
 
 class ToolManager:
@@ -30,6 +33,9 @@ class ToolManager:
         self.registry.register(RenameFileTool())
         self.registry.register(MoveFileTool())
         self.registry.register(SearchFilesTool())
+        self.registry.register(CreateDirectoryTool())
+        self.registry.register(DeleteDirectoryTool())
+        self.registry.register(GetFileInfoTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)
