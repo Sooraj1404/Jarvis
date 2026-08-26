@@ -5,6 +5,7 @@ from tools.registry import ToolRegistry
 from tools.result import ToolResult
 from tools.system_info import SystemInfoTool
 from tools.read_file import ReadFileTool
+from tools.create_file import CreateFileTool
 
 
 class ToolManager:
@@ -18,6 +19,7 @@ class ToolManager:
         self.registry.register(CloseAppTool())
         self.registry.register(ListFilesTool())
         self.registry.register(ReadFileTool())
+        self.registry.register(CreateFileTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)
