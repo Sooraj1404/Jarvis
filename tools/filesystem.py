@@ -10,18 +10,42 @@ class FileSystemPolicy:
         "__pycache__",
     }
 
-    def validate_path(self, path: str) -> tuple[bool, str, Path | None]:
+    def __init__(self, allowed_root: Path | None = None):
+        if allowed_root is None:
+            allowed_root = Path.cwd()
+
+        self.allowed_root = allowed_root.resolve()
+
+    def validate_path(
+        self,
+        path: str,
+    ) -> tuple[bool, str, Path | None]:
+
         path = path.strip()
 
         if not path:
-            return False, "No directory path was specified.", None
+            return False, "No path was specified.", None
 
         target = Path(path).expanduser()
 
         try:
             resolved = target.resolve()
         except OSError as exc:
-            return False, f"Unable to resolve path: {exc}", None
+            return (
+                False,
+                f"Unable to resolve path: {exc}",
+                None,
+            )
+
+        try:
+            resolved.relative_to(self.allowed_root)
+        except ValueError:
+            return (
+                False,
+                f"Access outside the approved directory is not allowed: "
+                f"'{path}'.",
+                None,
+            )
 
         protected_names = {
             name.lower()

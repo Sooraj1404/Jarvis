@@ -13,6 +13,11 @@ class ListFilesTool(Tool):
         self.policy = FileSystemPolicy()
 
     def execute(self, path: str = "", **kwargs) -> ToolResult:
+        if not path.strip():
+            return ToolResult.error(
+                "No directory path was specified."
+            )
+
         valid, error, directory = self.policy.validate_path(path)
 
         if not valid:
@@ -45,7 +50,7 @@ class ListFilesTool(Tool):
             return ToolResult.ok(
                 f"Found {len(entries)} entries in '{directory}'.",
                 {
-                    "path": str(directory.resolve()),
+                    "path": str(directory),
                     "entries": entries,
                 },
             )

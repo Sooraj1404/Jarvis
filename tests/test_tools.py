@@ -1,16 +1,16 @@
 from tools import (
     CloseAppTool,
+    CreateFileTool,
+    DeleteFileTool,
+    ListFilesTool,
     OpenAppTool,
+    ReadFileTool,
     SystemInfoTool,
     Tool,
     ToolManager,
     ToolRegistry,
     ToolResult,
-    ListFilesTool,
-    ReadFileTool,
-    CreateFileTool,
     WriteFileTool,
-    DeleteFileTool,
 )
 
 
@@ -43,15 +43,11 @@ def main():
     assert "system_info" in tools
     assert "open_app" in tools
     assert "close_app" in tools
-    assert "list_files" in registry.list_tools()
-    assert "read_file" in registry.list_tools()
-    assert "create_file" in registry.list_tools()
-    assert "write_file" in registry.list_tools()
-    assert "delete_file" in registry.list_tools()
-
-
-
-
+    assert "list_files" in tools
+    assert "read_file" in tools
+    assert "create_file" in tools
+    assert "write_file" in tools
+    assert "delete_file" in tools
 
     # Verify test tool execution
     result = registry.execute("test_tool")
@@ -105,17 +101,16 @@ def main():
     assert result.success is False
     assert "not approved" in result.message
 
-
-    # Verify missing path
+    # Verify list_files validation
     result = registry.execute("list_files")
 
     assert result.success is False
     assert "No directory path was specified" in result.message
 
-    # Verify nonexistent path
+    # Verify nonexistent directory
     result = registry.execute(
         "list_files",
-        path="C:\\this_directory_should_not_exist_jarvis_test",
+        path="this_directory_should_not_exist_jarvis_test",
     )
 
     assert result.success is False
@@ -130,7 +125,7 @@ def main():
     assert result.success is False
     assert "not a directory" in result.message
 
-    # Verify missing path
+    # Verify read_file validation
     result = registry.execute("read_file")
 
     assert result.success is False
@@ -139,7 +134,7 @@ def main():
     # Verify nonexistent file
     result = registry.execute(
         "read_file",
-        path="C:\\this_file_should_not_exist_jarvis_test.txt",
+        path="this_file_should_not_exist_jarvis_test.txt",
     )
 
     assert result.success is False
@@ -163,7 +158,7 @@ def main():
     assert result.success is False
     assert "protected path" in result.message
 
-    # Verify missing path
+    # Verify create_file validation
     result = registry.execute("create_file")
 
     assert result.success is False
@@ -189,7 +184,7 @@ def main():
     assert result.success is False
     assert "Parent directory does not exist" in result.message
 
-    # Verify missing path
+    # Verify write_file validation
     result = registry.execute("write_file")
 
     assert result.success is False
@@ -225,7 +220,7 @@ def main():
     assert result.success is False
     assert "protected path" in result.message
 
-    # Verify missing path
+    # Verify delete_file validation
     result = registry.execute("delete_file")
 
     assert result.success is False
@@ -257,6 +252,33 @@ def main():
 
     assert result.success is False
     assert "protected path" in result.message
+
+    # Verify filesystem boundary protection
+    result = registry.execute(
+        "read_file",
+        path="..\\README.md",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
+
+    # Verify protected directory
+    result = registry.execute(
+        "read_file",
+        path=".git\\config",
+    )
+
+    assert result.success is False
+    assert "protected path" in result.message
+
+    # Verify absolute path outside approved root
+    result = registry.execute(
+        "read_file",
+        path="C:\\Windows\\System32\\drivers\\etc\\hosts",
+    )
+
+    assert result.success is False
+    assert "outside the approved directory" in result.message
 
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
