@@ -6,6 +6,7 @@ from tools import (
     ToolManager,
     ToolRegistry,
     ToolResult,
+    ListFilesTool,
 )
 
 
@@ -25,6 +26,7 @@ def main():
     registry.register(SystemInfoTool())
     registry.register(OpenAppTool())
     registry.register(CloseAppTool())
+    registry.register(ListFilesTool())
 
     # Verify registration
     tools = registry.list_tools()
@@ -33,6 +35,7 @@ def main():
     assert "system_info" in tools
     assert "open_app" in tools
     assert "close_app" in tools
+    assert "list_files" in registry.list_tools()
 
     # Verify test tool execution
     result = registry.execute("test_tool")
@@ -86,6 +89,31 @@ def main():
     assert result.success is False
     assert "not approved" in result.message
 
+
+    # Verify missing path
+    result = registry.execute("list_files")
+
+    assert result.success is False
+    assert "No directory path was specified" in result.message
+
+    # Verify nonexistent path
+    result = registry.execute(
+        "list_files",
+        path="C:\\this_directory_should_not_exist_jarvis_test",
+    )
+
+    assert result.success is False
+    assert "does not exist" in result.message
+
+    # Verify file path rejection
+    result = registry.execute(
+        "list_files",
+        path="tools\\list_files.py",
+    )
+
+    assert result.success is False
+    assert "not a directory" in result.message
+
     # Verify unknown tool handling
     result = registry.execute("does_not_exist")
 
@@ -100,6 +128,7 @@ def main():
     assert "system_info" in manager_tools
     assert "open_app" in manager_tools
     assert "close_app" in manager_tools
+    assert "list_files" in manager_tools
 
     # Verify manager execution
     result = manager.execute("system_info")
