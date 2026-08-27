@@ -435,13 +435,36 @@ def main():
                     continue
 
                 tool_result = brain.tool_executor.execute(
-                    tool_command
+                tool_command
                 )
 
                 print(
-                    f"\nJarvis: {tool_result.message}\n"
+                    f"\nJarvis: {tool_result.message}"
                 )
 
+                if (
+                    tool_result.success
+                    and tool_command.tool == "web_search"
+                    and tool_result.data
+                ):
+                    results = tool_result.data.get("results", [])
+
+                    for index, result in enumerate(results, start=1):
+                        print()
+                        print(
+                            f"{index}. {result['title']}"
+                        )
+                        print(
+                            f"   {result['url']}"
+                        )
+                        print(
+                            f"   {result['snippet']}"
+                        )
+                        print(
+                            f"   Source: {result['source']}"
+                        )
+
+                print()
                 continue
 
             # =================================================

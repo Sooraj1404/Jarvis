@@ -25,6 +25,7 @@ TOOL_PERMISSIONS = {
     "delete_file": ToolPermission.DESTRUCTIVE,
     "delete_directory": ToolPermission.DESTRUCTIVE,
     "run_command": ToolPermission.READ,
+    "web_search": ToolPermission.READ,
 }
 
 

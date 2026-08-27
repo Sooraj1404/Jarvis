@@ -39,6 +39,34 @@ class ToolIntentDetector:
         lowered = text.lower()
 
         # -------------------------------------------------
+        # WEB SEARCH
+        # -------------------------------------------------
+
+        web_search_prefixes = (
+            "search the web for ",
+            "search the web ",
+            "search web for ",
+            "search web ",
+            "search online for ",
+            "search online ",
+            "look up ",
+            "look online for ",
+            "web search for ",
+        )
+
+        for prefix in web_search_prefixes:
+            if lowered.startswith(prefix):
+                query = text[len(prefix):].strip()
+
+                if query:
+                    return ToolCommand(
+                        tool="web_search",
+                        arguments={
+                            "query": self._clean_value(query),
+                        },
+                    )
+
+        # -------------------------------------------------
         # APPLICATION CONTROL
         # -------------------------------------------------
 
