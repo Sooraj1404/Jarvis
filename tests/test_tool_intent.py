@@ -267,6 +267,48 @@ def test_normal_conversation():
         "That sounds interesting."
     ) is None
 
+def test_run_command():
+    command = detector.detect("Run git status")
+
+    assert command == ToolCommand(
+        tool="run_command",
+        arguments={
+            "command": "git",
+            "arguments": ["status"],
+        },
+    )
+
+    command = detector.detect("Run git branch")
+
+    assert command == ToolCommand(
+        tool="run_command",
+        arguments={
+            "command": "git",
+            "arguments": ["branch"],
+        },
+    )
+
+    command = detector.detect("Run git log")
+
+    assert command == ToolCommand(
+        tool="run_command",
+        arguments={
+            "command": "git",
+            "arguments": ["log"],
+        },
+    )
+
+    command = detector.detect("Run python --version")
+
+    assert command == ToolCommand(
+        tool="run_command",
+        arguments={
+            "command": "python",
+            "arguments": ["--version"],
+        },
+    )
+assert detector.detect("Run del important.txt") is None
+
 
 def main():
     tests = [

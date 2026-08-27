@@ -232,7 +232,36 @@ Jarvis/
 |   +-- intent.py
 |   +-- jarvis_memory.db
 |
++-- tools/
+|   +-- __init__.py
+|   +-- base.py
+|   +-- command.py
+|   +-- create_directory.py
+|   +-- create_file.py
+|   +-- delete_directory.py
+|   +-- delete_file.py
+|   +-- executor.py
+|   +-- get_file_info.py
+|   +-- intent.py
+|   +-- list_files.py
+|   +-- manager.py
+|   +-- move_file.py
+|   +-- open_app.py
+|   +-- permissions.py
+|   +-- read_file.py
+|   +-- rename_file.py
+|   +-- result.py
+|   +-- run_command.py
+|   +-- search_files.py
+|   +-- system_info.py
+|   +-- write_file.py
+|
 +-- tests/
+|   +-- test_permissions.py
+|   +-- test_run_command.py
+|   +-- test_tool_executor.py
+|   +-- test_tool_intent.py
+|   +-- test_tools.py
 |
 +-- .venv/
 |
@@ -250,8 +279,6 @@ The following should NOT be committed:
 - Other local databases
 - Secrets
 - Environment files
-
----
 
 # Implemented Versions
 
@@ -557,26 +584,272 @@ The LLM may also generate explanatory content beyond the exact information store
 
 # V0.3 — Tool / Action System
 
-**Status: NEXT**
+**Status: COMPLETE**
 
-Planned capabilities:
+Goal:
+
+Give JARVIS a controlled ability to perform local computer actions while preserving explicit permission boundaries and deterministic behavior.
+
+V0.3 was intentionally implemented without introducing a heavy agent framework or unrestricted shell access.
+
+## Implemented
+
+### Tool Architecture
+
+A modular tool architecture was introduced using:
+
+- `Tool`
+- `ToolResult`
+- `ToolCommand`
+- `ToolRegistry`
+- `ToolManager`
+- `ToolExecutor`
+
+Tools are independently implemented and registered with the tool manager.
+
+### Application Control
+
+Implemented:
 
 - Open applications
 - Close applications
-- System information
-- File operations
-- Browser operations
+
+Natural-language requests can be routed to these tools.
+
+Examples:
+
+```text
+Open Notepad
+Could you open Notepad?
+Please launch Notepad
+Close Notepad
+```
+
+### System Information
+
+Implemented a system information tool capable of reporting local system information such as:
+
+- Operating system
+- OS version
+- Computer name
+- Architecture
+- Python version
+- Processor information
+
+### File Operations
+
+Implemented:
+
+- List files and directories
+- Read files
+- Create files
+- Write files
+- Delete files
+- Rename files
+- Move files
+- Search files
+- Create directories
+- Delete directories
+- Get file information
+
+The filesystem tools operate through structured `ToolCommand` objects rather than unrestricted shell commands.
+
+### Natural-Language Intent Routing
+
+The deterministic `ToolIntentDetector` converts supported natural-language requests into structured `ToolCommand` objects.
+
+Examples:
+
+```text
+Could you open Notepad?
+-> open_app
+
+Can you read README.md for me?
+-> read_file
+
+Please remove test.txt
+-> delete_file
+
+Show me what's in this folder
+-> list_files
+```
+
+The intent detector remains deliberately conservative.
+
+Unsupported requests are allowed to fall through to the normal LLM conversation path rather than being converted into arbitrary system actions.
+
+### Tool Executor
+
+`ToolExecutor` provides the execution boundary between structured tool commands and `ToolManager`.
+
+Flow:
+
+```text
+Natural Language
+       |
+       v
+ToolIntentDetector
+       |
+       v
+ToolCommand
+       |
+       v
+ToolExecutor
+       |
+       v
+ToolManager
+       |
+       v
+Tool
+       |
+       v
+ToolResult
+```
+
+### Permission System
+
+A deterministic permission system was introduced.
+
+Current permission levels:
+
+```text
+READ
+MODIFY
+DESTRUCTIVE
+```
+
+Current classification:
+
+```text
+READ
+- system_info
+- list_files
+- read_file
+- search_files
+- get_file_info
+- run_command
+
+MODIFY
+- open_app
+- close_app
+- create_file
+- write_file
+- create_directory
+- rename_file
+- move_file
+
+DESTRUCTIVE
+- delete_file
+- delete_directory
+```
+
+Destructive operations require explicit user confirmation before execution.
+
+Example:
+
+```text
+User: Please remove test.txt
+
+JARVIS: Sergeant, 'delete_file' is a destructive operation.
+Would you like me to proceed? (yes/no)
+
+User: no
+
+JARVIS: Very well, Sergeant. The operation has been cancelled.
+```
+
+If the user confirms, the operation is executed.
+
+### Safe Command Execution
+
+A restricted command execution tool was implemented.
+
+The tool does **not** provide unrestricted shell access.
+
+The current allowlist is:
+
+```text
+git status
+git branch
+git log
+python --version
+```
+
+Commands are executed using:
+
+```python
+subprocess.run(..., shell=False)
+```
+
+Additional protections include:
+
+- Exact command allowlisting
+- Structured command arguments
+- Argument type validation
+- Execution timeout
+- Return-code handling
+- Standard output/error capture
+- Rejection of unsupported commands
+- Protection against command chaining through the allowlist
+
+Examples:
+
+```text
+Run git status
+-> allowed
+
+Run python --version
+-> allowed
+
+Run del important.txt
+-> rejected
+```
+
+The command tool is intentionally small and restricted.
+
+Arbitrary PowerShell, `cmd.exe`, command chaining, arbitrary Python execution, package installation, and destructive shell commands are not supported.
+
+### Verification
+
+V0.3 was verified through:
+
+```text
+tests.test_tools
+tests.test_tool_intent
+tests.test_tool_executor
+tests.test_permissions
+tests.test_run_command
+```
+
+Additional verification included:
+
+```text
+python -m compileall brain tools tests
+git diff --check
+```
+
+Real `main.py` testing also verified:
+
+- Natural-language application control
+- Natural-language filesystem operations
+- Destructive-operation confirmation
+- Confirmation rejection
+- Confirmation acceptance
 - Safe command execution
-- Tool permission system
-- Tool result handling
+- Unsupported command rejection
+- Normal conversation fallback
 
-Important principle:
+## V0.3 Known Scope Limitations
 
-> JARVIS should never receive unrestricted system access.
+The deterministic `ToolIntentDetector` supports a defined set of natural-language patterns. It does not attempt to understand every possible phrasing.
 
-Tools should be explicitly defined, validated, and controlled.
+Command execution is deliberately restricted to a small allowlist.
 
----
+Browser control has not been implemented.
+
+Advanced computer-use capabilities, arbitrary command execution, multi-step planning, and autonomous actions remain future work.
+
+The permission system currently focuses on the local tool layer and is not intended to replace operating-system security boundaries.
 
 # V0.4 — Web and Knowledge
 
@@ -761,17 +1034,25 @@ The project should grow through verified milestones rather than accumulating unt
 
 ---
 
-# Current Next Step
+# Current Development Status
 
-**V0.2.1 — Memory Refinement is complete.**
+**V0.3 — Tool / Action System is complete.**
 
-Next:
+The current implementation includes:
 
-1. Commit the V0.2.1 milestone
-2. Push the milestone to GitHub
-3. Begin V0.3 — Tool / Action System
+- Local LLM and persistent memory from V0.1–V0.2.1
+- Controlled local tools
+- Natural-language tool intent routing
+- Tool execution
+- Permission boundaries
+- Destructive-operation confirmation
+- Restricted command execution
 
-V0.3 must preserve the same core principles:
+The next major milestone is **V0.4 — Web and Knowledge**.
+
+Before beginning V0.4, the V0.3 implementation should be committed and pushed to GitHub with the README and project context synchronized.
+
+The project should continue to follow the same principles:
 
 - Local first
 - No paid APIs

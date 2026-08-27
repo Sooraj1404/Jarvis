@@ -17,6 +17,7 @@ from tools.search_files import SearchFilesTool
 from tools.create_directory import CreateDirectoryTool
 from tools.delete_directory import DeleteDirectoryTool
 from tools.get_file_info import GetFileInfoTool
+from tools.run_command import RunCommandTool
 
 __all__ = [
     "Tool",

@@ -14,7 +14,7 @@ from tools.search_files import SearchFilesTool
 from tools.create_directory import CreateDirectoryTool
 from tools.delete_directory import DeleteDirectoryTool
 from tools.get_file_info import GetFileInfoTool
-
+from tools.run_command import RunCommandTool
 
 class ToolManager:
     def __init__(self):
@@ -36,6 +36,7 @@ class ToolManager:
         self.registry.register(CreateDirectoryTool())
         self.registry.register(DeleteDirectoryTool())
         self.registry.register(GetFileInfoTool())
+        self.registry.register(RunCommandTool())
 
     def execute(self, tool_name: str, **kwargs) -> ToolResult:
         return self.registry.execute(tool_name, **kwargs)

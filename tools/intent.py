@@ -228,6 +228,33 @@ class ToolIntentDetector:
                 )
 
         # -------------------------------------------------
+        # SYSTEM - RUN COMMAND
+        # -------------------------------------------------
+
+        if lowered.startswith("run "):
+            command_text = text[4:].strip()
+
+            command_map = {
+                "git status": ("git", ["status"]),
+                "git branch": ("git", ["branch"]),
+                "git log": ("git", ["log"]),
+                "python --version": ("python", ["--version"]),
+            }
+
+            command_key = command_text.lower()
+
+            if command_key in command_map:
+                command, arguments = command_map[command_key]
+
+                return ToolCommand(
+                    tool="run_command",
+                    arguments={
+                        "command": command,
+                        "arguments": arguments,
+                    },
+                )
+
+        # -------------------------------------------------
         # DIRECTORY - CREATE
         # -------------------------------------------------
 
